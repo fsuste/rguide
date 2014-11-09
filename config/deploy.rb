@@ -10,9 +10,9 @@ require 'mina/rvm'    # for rvm support. (http://rvm.io)
 #   repository   - Git repo to clone from. (needed by mina/git)
 #   branch       - Branch name to deploy. (needed by mina/git)
 
-set :domain, 'hocuvan.net'
-set :deploy_to, ''
-set :repository, 'git://...'
+set :domain, '192.168.110.126'
+set :deploy_to, '/home/narayan/rguide'
+set :repository, 'git@github.com:Narayanan170/rguide.git'
 set :branch, 'master'
 
 # For system-wide RVM install.
@@ -20,7 +20,7 @@ set :branch, 'master'
 
 # Manually create these paths in shared/ (eg: shared/config/database.yml) in your server.
 # They will be linked in the 'deploy:link_shared_paths' step.
-set :shared_paths, ['config/database.yml', 'log']
+set :shared_paths, ['config/database.yml', 'config/secrets.yml', 'log']
 
 # Optional settings:
 #   set :user, 'foobar'    # Username in the server to SSH to.
@@ -35,7 +35,7 @@ task :environment do
   # invoke :'rbenv:load'
 
   # For those using RVM, use this to load an RVM version@gemset.
-  invoke :'rvm:use[ruby-2.1.3@default]'
+  invoke :'rvm:use[ruby-2.1.4@default]'
 end
 
 # Put any custom mkdir's in here for when `mina setup` is ran.
@@ -49,6 +49,7 @@ task :setup => :environment do
   queue! %[chmod g+rx,u+rwx "#{deploy_to}/#{shared_path}/config"]
 
   queue! %[touch "#{deploy_to}/#{shared_path}/config/database.yml"]
+  queue! %[touch "#{deploy_to}/#{shared_path}/config/secrets.yml"]
   queue  %[echo "-----> Be sure to edit '#{deploy_to}/#{shared_path}/config/database.yml'."]
 end
 
@@ -60,6 +61,8 @@ task :deploy => :environment do
     invoke :'git:clone'
     invoke :'deploy:link_shared_paths'
     invoke :'bundle:install'
+    queue! %[cp "/tmp/database.yml" "#{deploy_to}/#{shared_path}/config/database.yml"]
+    queue! %[cp "/tmp/secrets.yml" "#{deploy_to}/config/secrets.yml"]
     invoke :'rails:db_migrate'
     invoke :'rails:assets_precompile'
     invoke :'deploy:cleanup'
